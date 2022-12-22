@@ -27,7 +27,7 @@ class SourcediffComponent < ApplicationComponent
               original_index = Regexp.last_match[:original_index].to_i - 1
               changed_index = Regexp.last_match[:changed_index].to_i - 1
               state = 'range'
-            when GitDiffParser::Patch::REMOVED_LINE
+            when /^[-]/
               original_index += 1
               changed_index += 0
               state = 'removed'
@@ -56,11 +56,6 @@ class SourcediffComponent < ApplicationComponent
     end
     @index = index
     @refresh = refresh
-  end
-
-  def offset(num)
-    off = 3 - num.to_s.length
-    (' ' * off) + num.to_s
   end
 
   def file_view_path(filename, sourcediff)
