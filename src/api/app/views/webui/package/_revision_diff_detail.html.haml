@@ -1,4 +1,5 @@
 - diff_content = file.dig('diff', '_content')
+- diff_hash = file.dig('diff', 'hash')
 .position-relative
   = render partial: 'webui/package/revision_diff_detail_buttons',
   locals: { file_view_path: file_view_path, filename: filename, index: index, last: last, has_content: diff_content.present?, linkinfo: linkinfo }
@@ -8,7 +9,31 @@
         .diff-card-header
           = calculate_filename(filename, file)
           %span.badge{ class: "badge-#{file['state']}" }= file['state'].capitalize
-      = render_diff(diff_content, file_index: index)
+      .pre.scroll
+        .diff>
+          - diff_hash.each do |line|
+            - id = "diff_#{index}_n#{line[:index]}"
+            %div{ class: "line #{line[:state]}", id: }>
+              - if line[:state] == 'range'
+                .offset
+                  .text-muted.text
+                    = "@#{ line[:content] }"
+              - else
+                = link_to "##{id}", class: 'd-flex' do
+                  .number<
+                    = line[:original_index]
+                  .number<
+                    = line[:changed_index]
+                .value<
+                  %span.character><
+                    - if line[:state] == 'added'
+                      = '+'
+                    - elsif line[:state] == 'removed'
+                      = '-'
+                    - else
+                      = ' '
+                  %span.content><
+                    = line[:content]
   - else
     .card{ id: "revision_details_#{index}" }
       .card-header
