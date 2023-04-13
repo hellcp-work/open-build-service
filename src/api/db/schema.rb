@@ -554,6 +554,7 @@ ActiveRecord::Schema[7.0].define(version: 202302224114624) do
     t.datetime "issues_updated", precision: nil, null: false
     t.boolean "enable_fetch", default: false
     t.boolean "publish_issues", default: true
+    t.string "api_key"
   end
 
   create_table "issues", id: :integer, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", options: "ENGINE=InnoDB ROW_FORMAT=DYNAMIC", force: :cascade do |t|
