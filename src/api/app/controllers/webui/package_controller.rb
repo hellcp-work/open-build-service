@@ -375,6 +375,7 @@ class Webui::PackageController < Webui::WebuiController
     redirect_to package_show_path(@project, @package)
   end
 
+  # FIXME: This is Webui::Packages::FilesController#delete
   def remove_file
     authorize @package, :update?
 
@@ -388,6 +389,7 @@ class Webui::PackageController < Webui::WebuiController
     redirect_to action: :show, project: @project, package: @package
   end
 
+  # FIXME: This is Webui::Packages::FilesController#show
   def view_file
     @filename = params[:filename] || params[:file] || ''
     if binary_file?(@filename) # We don't want to display binary files
