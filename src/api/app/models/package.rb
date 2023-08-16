@@ -274,8 +274,8 @@ class Package < ApplicationRecord
   end
 
   def changes_files
-    dir_hash.elements('entry').collect do |e|
-      e['name'] if e['name'] =~ /.changes$/
+    directory.entries.collect do |e|
+      e.name if e.name =~ /.changes$/
     end.compact
   end
 
@@ -450,6 +450,10 @@ class Package < ApplicationRecord
 
   def dir_hash(opts = {})
     Directory.hashed(opts.update(project: project.name, package: name))
+  end
+
+  def directory(opts = {})
+    Backend::ObjectApi::Sources::Package.files(project.name, name, opts)
   end
 
   def is_patchinfo?
@@ -842,7 +846,7 @@ class Package < ApplicationRecord
   end
 
   def rev
-    dir_hash['rev']
+    directory.rev
   end
 
   def channels
@@ -875,9 +879,9 @@ class Package < ApplicationRecord
   end
 
   def is_local_link?
-    linkinfo = dir_hash['linkinfo']
+    linkinfo = directory.linkinfo
 
-    linkinfo && (linkinfo['project'] == project.name)
+    linkinfo && (linkinfo.project == project.name)
   end
 
   def modify_channel(mode = :add_disabled)
@@ -1005,14 +1009,14 @@ class Package < ApplicationRecord
     bp = build_backend_package
 
     # determine the infos provided by srcsrv
-    dir = dir_hash(view: :info, withchangesmd5: 1, nofilename: 1)
-    bp.verifymd5 = dir['verifymd5']
-    bp.changesmd5 = dir['changesmd5']
-    bp.expandedmd5 = dir['srcmd5']
-    bp.maxmtime = if dir['revtime'].blank? # no commit, no revtime
+    dir = directory(view: :info, withchangesmd5: 1, nofilename: 1)
+    bp.verifymd5 = dir.verifymd5
+    bp.changesmd5 = dir.changesmd5
+    bp.expandedmd5 = dir.srcmd5
+    bp.maxmtime = if dir.revtime.blank? # no commit, no revtime
                     nil
                   else
-                    Time.at(Integer(dir['revtime']))
+                    Time.at(Integer(dir.revtime))
                   end
 
     # now check the unexpanded sources
@@ -1038,16 +1042,16 @@ class Package < ApplicationRecord
   end
 
   def update_backendinfo_unexpanded(bp)
-    dir = dir_hash
+    dir = directory
 
-    bp.srcmd5 = dir['srcmd5']
-    li = dir['linkinfo']
+    bp.srcmd5 = dir.srcmd5
+    li = dir.linkinfo
     if li
-      bp.error = li['error']
+      bp.error = li.error
 
-      Rails.logger.debug { "Syncing link #{project.name}/#{name} -> #{li['project']}/#{li['package']}" }
+      Rails.logger.debug { "Syncing link #{project.name}/#{name} -> #{li.project}/#{li.package}" }
       # we have to be careful - the link target can be nowhere
-      bp.links_to = Package.find_by_project_and_name(li['project'], li['package'])
+      bp.links_to = Package.find_by_project_and_name(li.project, li.package)
     else
       bp.error = nil
       bp.links_to = nil
@@ -1287,7 +1291,7 @@ class Package < ApplicationRecord
   end
 
   def file_exists?(filename, opts = {})
-    dir_hash(opts).key?('entry') && [dir_hash(opts)['entry']].flatten.compact.any? { |item| item['name'] == filename }
+    directory(opts).entries.flatten.compact.any? { |item| item.name == filename }
   end
 
   def has_icon?

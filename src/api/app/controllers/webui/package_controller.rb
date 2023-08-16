@@ -230,7 +230,7 @@ class Webui::PackageController < Webui::WebuiController
   end
 
   def rdiff
-    @last_rev = @package.dir_hash['rev']
+    @last_rev = @package.rev
     @linkinfo = @package.linkinfo
     if params[:oproject]
       @oproject = ::Project.find_by_name(params[:oproject])
@@ -619,20 +619,15 @@ class Webui::PackageController < Webui::WebuiController
     query[:expand]  = expand  if expand
     query[:rev]     = rev     if rev
 
-    dir_xml = @package.source_file(nil, query)
-    return [] if dir_xml.blank?
+    directory = @package.directory(query)
 
-    dir = Xmlhash.parse(dir_xml)
-    @serviceinfo = dir.elements('serviceinfo').first
-    files = []
-    dir.elements('entry') do |entry|
-      file = Hash[*[:name, :size, :mtime, :md5].map! { |x| [x, entry.value(x.to_s)] }.flatten]
+    directory.entries.map do |entry|
+      file = Hash[*[:name, :size, :mtime, :md5].map! { |x| [x, entry.send(x.to_s)] }.flatten]
       file[:viewable] = !binary_file?(file[:name]) && file[:size].to_i < 2**20 # max. 1 MB
       file[:editable] = file[:viewable] && !file[:name].match?(/^_service[_:]/)
-      file[:srcmd5] = dir.value('srcmd5')
-      files << file
+      file[:srcmd5] = directory.srcmd5
+      file
     end
-    files
   end
 
   # Basically backend stores date in /source (package sources) and /build (package
