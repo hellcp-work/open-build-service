@@ -2,7 +2,7 @@ module Backend
   module Responses
     class LinkedPackage < Backend::Responses::Base
 
-      def initialize(content)
+      def initialize(opts = {})
         @root = 'linked'
         @attributes = ['project', 'package']
         super

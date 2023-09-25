@@ -1009,14 +1009,14 @@ class Package < ApplicationRecord
     bp = build_backend_package
 
     # determine the infos provided by srcsrv
-    dir = directory(view: :info, withchangesmd5: 1, nofilename: 1)
-    bp.verifymd5 = dir.verifymd5
-    bp.changesmd5 = dir.changesmd5
-    bp.expandedmd5 = dir.srcmd5
-    bp.maxmtime = if dir.revtime.blank? # no commit, no revtime
+    dir = dir_hash(view: :info, withchangesmd5: 1, nofilename: 1)
+    bp.verifymd5 = dir['verifymd5']
+    bp.changesmd5 = dir['changesmd5']
+    bp.expandedmd5 = dir['srcmd5']
+    bp.maxmtime = if dir['revtime'].blank? # no commit, no revtime
                     nil
                   else
-                    Time.at(Integer(dir.revtime))
+                    Time.at(Integer(dir['revtime']))
                   end
 
     # now check the unexpanded sources
