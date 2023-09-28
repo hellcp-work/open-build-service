@@ -845,9 +845,7 @@ class Package < ApplicationRecord
     dir_hash['linkinfo']
   end
 
-  def rev
-    directory.rev
-  end
+  delegate :rev, to: :directory
 
   def channels
     update_if_dirty

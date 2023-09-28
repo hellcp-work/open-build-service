@@ -1,8 +1,6 @@
 module Backend
   module Responses
     class Directory < Backend::Responses::Base
-      attr_reader 
-
       def initialize(opts = {})
         @root = 'directory'
         @attributes = ['name', 'rev', 'vrev', 'srcmd5', 'error']
