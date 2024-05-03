@@ -19,18 +19,18 @@ module Webui::ProjectBuildResultParsing
     params['expansionerror'] = 1 if params['unresolvable']
     monitor_set_filter(defaults)
 
-    find_opt = { project: @project.to_param, view: 'status', code: @status_filter,
+    find_opt = { view: 'status', code: @status_filter,
                  arch: @arch_filter, repository: @repo_filter }
     find_opt[:lastbuild] = 1 if @lastbuild_switch.present?
 
-    buildresult = Buildresult.find_hashed(find_opt)
-    if buildresult.empty?
+    buildresult = Backend::Models::Resultlist.fetch(@project.to_param, find_opt)
+    unless buildresult
       flash[:warning] = "No build results for project '#{elide(@project.name)}'"
       redirect_to action: :show, project: params[:project]
       return
     end
 
-    return unless buildresult.key?('result')
+    return if buildresult.results.empty?
 
     buildresult
   end
@@ -42,7 +42,7 @@ module Webui::ProjectBuildResultParsing
     @repostatusdetailshash = {}
     @failures = 0
 
-    buildresult.elements('result') do |result|
+    buildresult.results.each do |result|
       monitor_parse_result(result)
     end
 
@@ -51,8 +51,8 @@ module Webui::ProjectBuildResultParsing
   end
 
   def monitor_parse_result(result)
-    repo = result['repository']
-    arch = result['arch']
+    repo = result.repository
+    arch = result.arch
 
     return unless @repo_filter.nil? || @repo_filter.include?(repo)
     return unless @arch_filter.nil? || @arch_filter.include?(arch)
@@ -61,28 +61,28 @@ module Webui::ProjectBuildResultParsing
     @statushash[repo] ||= {}
     stathash = @statushash[repo][arch] = {}
 
-    result.elements('status') do |status|
-      package = status['package']
+    result.statuses.each do |status|
+      package = status.package
       next if @name_filter.present? && !filter_matches?(package, @name_filter)
 
       stathash[package] = status
       @packagenames.add(package)
-      @failures += 1 if status['code'].in?(%w[unresolvable failed broken])
+      @failures += 1 if status.code.in?(%w[unresolvable failed broken])
     end
 
     # repository status cache
     @repostatushash[repo] ||= {}
     @repostatusdetailshash[repo] ||= {}
 
-    return unless result.key?('state')
+    return unless result.state
 
-    @repostatushash[repo][arch] = if result.key?('dirty')
-                                    "outdated_#{result['state']}"
+    @repostatushash[repo][arch] = if result.dirty
+                                    "outdated_#{result.state}"
                                   else
-                                    result['state']
+                                    result.state
                                   end
 
-    @repostatusdetailshash[repo][arch] = result['details'] if result.key?('details')
+    @repostatusdetailshash[repo][arch] = result.details if result.details
   end
 
   def monitor_set_arch_filter(defaults)

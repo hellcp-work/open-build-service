@@ -224,7 +224,7 @@ class Webui::ProjectController < Webui::WebuiController
 
   def buildresult
     render partial: 'buildstatus', locals: { project: @project,
-                                             buildresults: @project.buildresults,
+                                             buildresults: Backend::Models::Resultlist.fetch(@project.to_param, view: 'summary'),
                                              collapsed_repositories: params.fetch(:collapsedRepositories, {}) }
   end
 
