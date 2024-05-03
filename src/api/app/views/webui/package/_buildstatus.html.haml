@@ -1,12 +1,12 @@
-- unless buildresults.excluded_counter.zero? && !buildresults.show_all
+- unless excluded_counter.zero?
   .mt-3.form-check
-    = check_box_tag("show_all_#{index}", true, buildresults.show_all, class: 'form-check-input d-none',
+    = check_box_tag("show_all_#{index}", true, show_all, class: 'form-check-input d-none',
                     onchange: "updateBuildResult('#{index}')")
-    - label_message = buildresults.excluded_counter.zero? ? 'Hide' : "Show #{buildresults.excluded_counter}"
+    - label_message = show_all ? 'Hide' : "Show #{excluded_counter}"
     = label_tag "show_all_#{index}" do
       %u.custom-label #{label_message} excluded/disabled results
 
-- buildresults.results.each_pair do |package, results|
+- buildresults.group_by_package.each do |package, all_results|
   :ruby
     package_name = package.tr('.:', '_')
     expanded = collapsed_packages.exclude?(package_name)
@@ -15,9 +15,9 @@
     - if buildresults.results.count > 1
       = collapse_link(expanded, package_name)
   .collapse#package-buildstatus{ class: "collapse-#{package_name}#{expanded ? ' show' : ''}", data: { main: package_name } }
-    - if results.present?
+    - if all_results.present?
       - previous_repo = nil
-      - results.each do |result|
+      - all_results.results.each do |result|
         :ruby
           repository_name = result.repository.tr('.', '_')
           expanded = repository_expanded?(collapsed_repositories, repository_name, package_name)
@@ -32,32 +32,33 @@
                    data: { repository: repository_name, main: package_name } }
           .d-flex.flex-row.flex-wrap.pt-1
             .repository-state
-              - if result.is_repository_in_db
+              - if result.repository_in_db
                 = repository_status_icon(status: result.state)
               - else
                 %i.fas.fa-clock.text-warning{ title: 'This result is outdated' }
               %span.ms-1
-                = result.architecture
+                = result.arch
+            - status = result.statuses.first
             .build-state.toggle-build-info-parent
               %i.fa.fa-question-circle.text-info.px-2.ps-lg-1.toggle-build-info{ title: 'Click to keep it open' }
-              = render(BuildresultStatusLinkComponent.new(repository_name: result.repository, architecture_name: result.architecture,
+              = render(BuildresultStatusLinkComponent.new(repository_name: result.repository, architecture_name: result.arch,
                                                           project_name: project.name, package_name: package,
-                                                          build_status: result.code, build_details: result.details))
+                                                          build_status: status.code, build_details: status.details))
             .build-info.mt-1.ms-3.mb-3.me-3.collapsed
               .triangle.center
               .build-info-content
-                %p.py-1= Buildresult.status_description(result.code)
+                %p.py-1= Buildresult.status_description(status.code)
                 %div
-                  - if result.is_repository_in_db
+                  - if result.repository_in_db
                     = repository_status_icon(status: result.state)
                     %span.ps-1= repository_info(result.state)
                   - else
                     %i.fas.fa-clock.text-warning
                     This result is outdated
-                - if result.details
+                - if status.details
                   .pt-1.mt-3
-                    %strong{ class: "build-state-#{result.code}" } #{result.code}:
-                    %span.text-word-break-all= result.details
+                    %strong{ class: "build-state-#{status.code}" } #{status.code}:
+                    %span.text-word-break-all= status.details
 
         - previous_repo = result.repository
     - else

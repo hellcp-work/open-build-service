@@ -305,7 +305,9 @@ class Webui::PackageController < Webui::WebuiController
     if @project.repositories.any?
       show_all = params[:show_all].to_s.casecmp?('true')
       @index = params[:index]
-      @buildresults = @package.buildresult(@project, show_all)
+      @buildresults = Backend::Models::Resultlist.fetch(@project.to_param, package: @package.to_param, multibuild: 1, locallink: 1)
+      excluded_counter = @buildresults.excluded_counter
+      @buildresults = @buildresults.without_excluded unless show_all
 
       # TODO: this is part of the temporary changes done for 'request_show_redesign'.
       request_show_redesign_partial = 'webui/request/beta_show_tabs/build_status' if params.fetch(:inRequestShowRedesign, false)
@@ -313,6 +315,8 @@ class Webui::PackageController < Webui::WebuiController
       render partial: request_show_redesign_partial || 'buildstatus', locals: { buildresults: @buildresults,
                                                                                 index: @index,
                                                                                 project: @project,
+                                                                                show_all: show_all,
+                                                                                excluded_counter: excluded_counter,
                                                                                 collapsed_packages: params.fetch(:collapsedPackages, []),
                                                                                 collapsed_repositories: params.fetch(:collapsedRepositories, {}) }
     else
