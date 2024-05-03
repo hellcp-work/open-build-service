@@ -33,17 +33,17 @@ module ActionBuildResultsService
     end
 
     def package_build_results(source_package, source_project)
-      results = source_package.buildresult(source_project, show_all: true).results
+      results = Backend::Models::Resultlist.fetch(source_project, package: source_package, multibuild: 1, locallink: 1).group_by_package
       results.flat_map do |pkg, build_results|
-        build_results.map do |result|
+        build_results.results.map do |result|
           {
-            architecture: result.architecture,
+            architecture: result.arch,
             repository: result.repository,
-            status: result.code,
+            status: result.statuses.first.code,
             package_name: pkg,
-            project_name: source_project.name,
+            project_name: source_project,
             repository_status: result.state,
-            is_repository_in_db: result.is_repository_in_db
+            is_repository_in_db: result.repository_in_db
           }
         end
       end
