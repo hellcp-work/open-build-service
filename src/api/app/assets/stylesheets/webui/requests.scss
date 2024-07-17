@@ -61,6 +61,11 @@
   margin: auto;
 }
 
+.request-index-description {
+  height: calc(var(--bs-body-line-height) * 1em);
+  overflow: hidden;
+}
+
 @include media-breakpoint-up(sm) {
   .order-sm-1 {
     order: 1;
