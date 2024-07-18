@@ -84,6 +84,12 @@
   .order-md-2 {
     order: 2;
   }
+
+  #requests-filter-desktop {
+    .collapse {
+      display: block !important;
+    }
+  }
 }
 
 .fa-custom-pr-closed {
