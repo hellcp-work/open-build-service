@@ -66,6 +66,10 @@
   overflow: hidden;
 }
 
+.col-with-icon {
+  max-width: calc(100% - 2.5rem)
+}
+
 @include media-breakpoint-up(sm) {
   .order-sm-1 {
     order: 1;
